@@ -36,11 +36,15 @@ export async function assertSameOrigin(): Promise<void> {
 }
 
 /**
- * Best-effort client IP for rate limiting. Reads the standard proxy headers;
- * falls back to "unknown" when none are present.
+ * Best-effort client IP for rate limiting. On Cloudflare, cf-connecting-ip is
+ * set by the edge and cannot be spoofed, whereas a client-sent
+ * X-Forwarded-For survives as the first entry — so it must win. Otherwise
+ * reads the standard proxy headers; falls back to "unknown".
  */
 export async function getClientIp(): Promise<string> {
   const h = await headers();
+  const cfIp = h.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
   const forwarded = h.get("x-forwarded-for");
   if (forwarded) {
     const first = forwarded.split(",")[0]?.trim();

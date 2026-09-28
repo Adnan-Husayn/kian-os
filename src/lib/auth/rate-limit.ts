@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
  * Policy: max 10 attempts per 10 minutes per IP, counted from the
  * LoginAttempt table. Rows are pruned opportunistically on each call.
  *
- * This MUST live in the database, not in module memory: on Vercel each
+ * This MUST live in the database, not in module memory: on serverless hosts (Cloudflare Workers) each
  * serverless instance has its own memory, so an in-memory bucket would let
  * an attacker multiply the allowance by the instance count. The account
  * lockout (3 consecutive failures -> escalating time-based lockout, see

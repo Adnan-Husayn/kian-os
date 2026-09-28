@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // pg loads pg-cloudflare (TCP sockets on Workers) through a runtime require
+  // that file tracing misses; ship it with every server route.
+  outputFileTracingIncludes: {
+    "/**": ["./node_modules/pg-cloudflare/**/*"],
+  },
+  // Leave Prisma unbundled so OpenNext resolves its "workerd" export (a
+  // precompiled Wasm module): Workers forbid compiling Wasm at runtime.
+  serverExternalPackages: ["@prisma/client", ".prisma/client"],
   async headers() {
     return [
       {

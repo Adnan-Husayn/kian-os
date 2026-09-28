@@ -1,0 +1,22 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	// Not "kian-os": that name belongs to the old VM relay Worker.
+	"name": "kian-os-app",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2026-09-01",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			// Self-reference binding required by OpenNext; must match "name".
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "kian-os-app"
+		}
+	],
+	"observability": { "enabled": true }
+	// Secrets (set with `npx wrangler secret put`, never committed):
+	//   DATABASE_URL  Neon pooled connection string
+}

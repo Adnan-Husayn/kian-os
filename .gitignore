@@ -50,3 +50,8 @@ ops/*.log
 
 # .env.example is the documented template — it IS committed (see above).
 !.env.example
+
+# cloudflare (opennext + wrangler)
+/.open-next/
+/.wrangler/
+.dev.vars*

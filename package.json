@@ -5,16 +5,20 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start -H 127.0.0.1",
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset-data": "tsx prisma/reset-data.ts"
+    "db:reset-data": "tsx prisma/reset-data.ts",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "db:migrate": "prisma migrate deploy"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.6",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "bcryptjs": "^3.0.3",
@@ -27,6 +31,7 @@
     "next": "16.3.6",
     "next-themes": "^0.4.6",
     "pg": "^8.23.0",
+    "pg-cloudflare": "^1.4.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-markdown": "^10.1.0",
@@ -45,6 +50,7 @@
     "prisma": "^7.10.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.143.0"
   }
 }

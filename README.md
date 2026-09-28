@@ -46,20 +46,35 @@ Then sign in at http://localhost:3000/login.
 | `npx prisma validate` | Validate `prisma/schema.prisma`. |
 | `npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script` | Regenerate the initial migration SQL. |
 
-## Deploy (Vercel + Neon)
+## Deploy (Cloudflare Workers + Neon)
 
-1. **Database:** create a free Neon project. Copy the **pooled** connection
-   string (it ends with `?sslmode=require`).
-2. **Vercel:** import this repo. Set the Build Command to
-   `npm run vercel-build` (it runs `prisma generate && prisma migrate deploy
-   && next build`, so migrations apply automatically on every deploy).
-3. **Environment variables** (Vercel → Project Settings → Environment
-   Variables). All are also documented in `.env.example`:
-   | Variable | Required | Used for |
+The app runs on Cloudflare Workers via the OpenNext adapter
+(`@opennextjs/cloudflare`); config in `wrangler.jsonc` and `open-next.config.ts`.
+Worker name: `kian-os-app`.
+
+1. **Database:** create a free Neon project. Keep both the **pooled** and the
+   **direct** connection strings (both end with `?sslmode=require`).
+2. **Migrations** run from your machine, not during the Worker build:
+   ```sh
+   DIRECT_URL="<direct string>" npm run db:migrate
+   ```
+3. **Secret** (stored encrypted in Cloudflare, never in the repo):
+   ```sh
+   npx wrangler secret put DATABASE_URL   # paste the pooled string
+   ```
+4. **Deploy:** `npm run cf:deploy` (builds with OpenNext, uploads with
+   Wrangler). `npm run cf:preview` runs the Workers build locally first; for
+   that, put `DATABASE_URL=...` in an untracked `.dev.vars` file.
+
+   | Variable | Where | Used for |
    |---|---|---|
-   | `DATABASE_URL` | yes | App runtime + `prisma migrate deploy` at build time |
-   | `PG_POOL_MAX` | no | pg pool size per serverless instance (default `5`) |
-   | `SEED_USERNAME` / `SEED_PASSWORD` | seed only | `npm run db:seed` — run once after the first deploy |
+   | `DATABASE_URL` | Worker secret | App runtime (Neon pooled string) |
+   | `DIRECT_URL` | your shell only | `prisma migrate deploy` (Neon direct string) |
+   | `PG_POOL_MAX` | optional var | pg pool size per request (default `5`) |
+   | `SEED_USERNAME` / `SEED_PASSWORD` | your shell only | `npm run db:seed` for a fresh database |
+
+   On Workers each request gets its own Prisma client (`src/lib/db.ts`):
+   Workers forbid reusing sockets across requests.
    No `SESSION_SECRET` is needed — session tokens are random 32-byte values;
    only their SHA-256 hash is stored.
 4. **Data:** to carry data over from the old database (verified 2026-09-29):
@@ -69,13 +84,14 @@ Then sign in at http://localhost:3000/login.
    # into Neon (creates all tables AND the _prisma_migrations history)
    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f kian-os-dump.sql
    ```
-   The dump carries the migration history, so the first Vercel deploy's
-   `migrate deploy` will apply only newer migrations on top — nothing to
-   mark manually. For a fresh start instead, skip the dump and run
-   `npm run db:seed` once (idempotent: skips if the user exists).
-5. Deploy. The app is stateless: secure httpOnly cookies work behind Vercel's
-   proxy, login rate limiting and the lockout counters live in Postgres, and
-   nothing depends on the old VM (no `relay/`, no `keepalive`, no local paths).
+   The dump carries the migration history, so `npm run db:migrate` afterwards
+   applies only newer migrations on top — nothing to mark manually. For a
+   fresh start instead, skip the dump and run `npm run db:seed` once
+   (idempotent: skips if the user exists).
+
+The app is stateless: login rate limiting (keyed on Cloudflare's
+`cf-connecting-ip`) and lockout counters live in Postgres, and nothing depends
+on the old VM (no `relay/`, no `keepalive`, no local paths).
 
 ## Security model
 
@@ -88,7 +104,7 @@ Then sign in at http://localhost:3000/login.
   whether the username, password, lockout state, or rate limit was the cause.
   A dummy bcrypt compare runs for unknown users to blunt timing-based user
   enumeration.
-- **Auth gate:** `src/proxy.ts` (Next.js 16's renamed middleware) redirects cookie-less requests to `/login` without touching the DB; `requireUser()` in the `(app)` layout does the real session validation.
+- **Auth gate:** `requireUser()` in the `(app)` layout validates the session and redirects to `/login`; the login page bounces signed-in users to `/today`. There is no `proxy.ts` (Node middleware is experimental on Cloudflare).
 - **Security headers** in `next.config.ts`: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`.
 
 ### Escalating time-based lockout
