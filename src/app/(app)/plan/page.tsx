@@ -17,7 +17,9 @@ export default async function PlanPage() {
   const tomorrowKey = dayKeyKolkata(tomorrowStart);
 
   const plan = await getOrCreateDailyPlan(tomorrowKey);
-  const plannedIds = plan.tasks.map((t) => t.taskId);
+  // Entries already moved on from tomorrow (">") aren't part of its plan.
+  const planTasks = plan.tasks.filter((t) => !t.migrated);
+  const plannedIds = planTasks.map((t) => t.taskId);
 
   // Candidate list: open tasks not already in tomorrow's plan.
   const candidates = await prisma.task.findMany({
@@ -37,7 +39,7 @@ export default async function PlanPage() {
     },
   });
 
-  const existingItems = plan.tasks.map((pt) => ({
+  const existingItems = planTasks.map((pt) => ({
     taskId: pt.taskId,
     title: pt.task.title,
     plannedMinutes: pt.plannedMinutes ?? pt.task.estimatedMinutes ?? 30,

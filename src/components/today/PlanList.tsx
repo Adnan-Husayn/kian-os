@@ -6,6 +6,7 @@ import {
   ArrowUp,
   ArrowDown,
   CalendarX,
+  ChevronsRight,
   GripVertical,
   Plus,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import {
   reorderPlanTasks,
   togglePlanTaskComplete,
   notToday,
+  movePlanTaskToDate,
 } from "@/actions/planner";
 import { useShortcuts } from "@/components/keyboard/shortcut-context";
 
@@ -28,10 +30,13 @@ export interface PlanListItem {
   status: string;
   estimatedMinutes: number | null;
   priority: string;
+  /** Moved on to tomorrow: stays in today's log as a ">" entry. */
+  migrated: boolean;
 }
 
 interface PlanListProps {
   dayKey: string;
+  tomorrowKey: string;
   initialItems: PlanListItem[];
 }
 
@@ -44,7 +49,7 @@ function minutesLabel(item: PlanListItem): string | null {
  * Today's plan list: animated checkboxes, HTML5 drag-to-reorder plus
  * up/down arrow buttons for keyboard users, and a gentle "not today" action.
  */
-export function PlanList({ dayKey, initialItems }: PlanListProps) {
+export function PlanList({ dayKey, tomorrowKey, initialItems }: PlanListProps) {
   const [items, setItems] = React.useState(initialItems);
   const [dragIndex, setDragIndex] = React.useState<number | null>(null);
   const [dropIndex, setDropIndex] = React.useState<number | null>(null);
@@ -101,6 +106,13 @@ export function PlanList({ dayKey, initialItems }: PlanListProps) {
     await notToday(item.taskId, dayKey);
   }
 
+  async function handleMoveToTomorrow(item: PlanListItem) {
+    setItems((prev) =>
+      prev.map((i) => (i.taskId === item.taskId ? { ...i, migrated: true } : i)),
+    );
+    await movePlanTaskToDate(item.taskId, dayKey, tomorrowKey);
+  }
+
   if (items.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-surface px-5 py-8 text-center">
@@ -125,6 +137,29 @@ export function PlanList({ dayKey, initialItems }: PlanListProps) {
       {items.map((item, index) => {
         const done = item.status === "DONE";
         const mins = minutesLabel(item);
+        if (item.migrated) {
+          // Bullet-journal migration: the entry stays, marked ">".
+          return (
+            <li
+              key={item.taskId}
+              className="log-row flex items-center gap-3 py-2.5 pl-8 pr-1"
+            >
+              <span
+                aria-hidden="true"
+                className="inline-flex size-7 shrink-0 items-center justify-center font-mono text-base text-mark"
+              >
+                &gt;
+              </span>
+              <p className="min-w-0 flex-1 truncate text-base text-text-secondary">
+                <span className="sr-only">Moved to tomorrow: </span>
+                {item.title}
+              </p>
+              <span className="shrink-0 font-mono text-xs text-text-secondary">
+                tomorrow
+              </span>
+            </li>
+          );
+        }
         // Plain <li> carries the native HTML5 drag handlers (framer-motion
         // repurposes onDragStart on motion components); the inner motion.div
         // keeps the layout animation on reorder.
@@ -236,6 +271,19 @@ export function PlanList({ dayKey, initialItems }: PlanListProps) {
                   <ArrowDown className="size-3.5" aria-hidden="true" />
                 </Button>
               </Tooltip>
+              {!done && (
+                <Tooltip content="Move to tomorrow">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => void handleMoveToTomorrow(item)}
+                    aria-label={`Move "${item.title}" to tomorrow`}
+                  >
+                    <ChevronsRight className="size-3.5" aria-hidden="true" />
+                  </Button>
+                </Tooltip>
+              )}
               <Tooltip content="Not today — back to the backlog">
                 <Button
                   variant="ghost"

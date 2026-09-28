@@ -35,6 +35,8 @@ export interface PlanTaskDTO {
   taskId: string;
   position: number;
   plannedMinutes: number | null;
+  /** Moved forward to a later day; shown as ">" in this day's log. */
+  migrated: boolean;
   task: {
     id: string;
     title: string;
@@ -101,6 +103,7 @@ function toPlanDTO(
       taskId: string;
       position: number;
       plannedMinutes: number | null;
+      migratedAt: Date | null;
       task: {
         id: string;
         title: string;
@@ -126,6 +129,7 @@ function toPlanDTO(
       taskId: pt.taskId,
       position: pt.position,
       plannedMinutes: pt.plannedMinutes,
+      migrated: pt.migratedAt !== null,
       task: {
         id: pt.task.id,
         title: pt.task.title,
@@ -234,7 +238,14 @@ export async function setPlanTasks(
     }));
 
   await prisma.$transaction([
-    prisma.dailyPlanTask.deleteMany({ where: { dailyPlanId: plan.id } }),
+    // Keep ">" (migrated) entries as history, unless that task is being
+    // planned on this day again.
+    prisma.dailyPlanTask.deleteMany({
+      where: {
+        dailyPlanId: plan.id,
+        OR: [{ migratedAt: null }, { taskId: { in: rows.map((r) => r.taskId) } }],
+      },
+    }),
     ...(rows.length > 0
       ? [prisma.dailyPlanTask.createMany({ data: rows })]
       : []),
@@ -274,9 +285,19 @@ export async function addTaskToPlan(
 
   const existing = await prisma.dailyPlanTask.findUnique({
     where: { dailyPlanId_taskId: { dailyPlanId: plan.id, taskId } },
-    select: { id: true },
+    select: { id: true, migratedAt: true },
   });
-  if (existing) return { ok: true };
+  if (existing) {
+    // Re-adding a task that was moved away brings it back onto this day.
+    if (existing.migratedAt) {
+      await prisma.dailyPlanTask.update({
+        where: { id: existing.id },
+        data: { migratedAt: null },
+      });
+      revalidatePath("/today");
+    }
+    return { ok: true };
+  }
 
   const max = await prisma.dailyPlanTask.aggregate({
     where: { dailyPlanId: plan.id },
@@ -344,7 +365,11 @@ export async function reorderPlanTasks(
   return { ok: true };
 }
 
-/** Move a plan task from one day's plan to another, keeping planned minutes. */
+/**
+ * Move a plan task from one day's plan to another, keeping planned minutes.
+ * Moving forward leaves the source row in place, marked migrated (">" in the
+ * daily log); moving backward removes it.
+ */
 export async function movePlanTaskToDate(
   taskId: string,
   fromDayKey: string,
@@ -371,6 +396,7 @@ export async function movePlanTaskToDate(
     },
     select: { id: true, plannedMinutes: true },
   });
+  const forward = toDate.getTime() > fromDate.getTime();
 
   const target = await prisma.dailyPlan.upsert({
     where: { userId_date: { userId: user.id, date: toDate } },
@@ -383,15 +409,29 @@ export async function movePlanTaskToDate(
     where: {
       dailyPlanId_taskId: { dailyPlanId: target.id, taskId: parsed.data.taskId },
     },
-    select: { id: true },
+    select: { id: true, migratedAt: true },
   });
 
   await prisma.$transaction([
     ...(source
-      ? [prisma.dailyPlanTask.delete({ where: { id: source.id } })]
+      ? [
+          forward
+            ? prisma.dailyPlanTask.update({
+                where: { id: source.id },
+                data: { migratedAt: new Date() },
+              })
+            : prisma.dailyPlanTask.delete({ where: { id: source.id } }),
+        ]
       : []),
     ...(alreadyThere
-      ? []
+      ? alreadyThere.migratedAt
+        ? [
+            prisma.dailyPlanTask.update({
+              where: { id: alreadyThere.id },
+              data: { migratedAt: null },
+            }),
+          ]
+        : []
       : [
           prisma.dailyPlanTask.create({
             data: {

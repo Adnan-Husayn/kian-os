@@ -33,7 +33,10 @@ export default async function ReviewPage() {
 
   const incomplete = plan.tasks
     .filter(
-      (pt) => pt.task.status !== "DONE" && pt.task.status !== "CANCELLED",
+      (pt) =>
+        !pt.migrated &&
+        pt.task.status !== "DONE" &&
+        pt.task.status !== "CANCELLED",
     )
     .map((pt) => ({
       taskId: pt.taskId,

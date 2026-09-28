@@ -225,6 +225,9 @@ model DailyPlanTask {
   task           Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
   position       Int       @default(0)
   plannedMinutes Int?
+  /// Set when the task was moved forward to a later day. The row stays on
+  /// this day as a bullet-journal ">" (migrated) entry.
+  migratedAt     DateTime?
 
   @@unique([dailyPlanId, taskId])
   @@index([taskId])

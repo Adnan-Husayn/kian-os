@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth/session";
 import { getOrCreateDailyPlan } from "@/actions/planner";
 import {
+  addDaysKolkata,
   dayKeyKolkata,
   kolkataDateFromDayKey,
   formatKolkata,
@@ -63,6 +64,7 @@ export default async function TodayPage() {
   const now = new Date();
   const dayKey = dayKeyKolkata(now);
   const todayStart = kolkataDateFromDayKey(dayKey);
+  const tomorrowKey = dayKeyKolkata(addDaysKolkata(todayStart, 1));
 
   const plan = await getOrCreateDailyPlan(dayKey);
 
@@ -99,13 +101,17 @@ export default async function TodayPage() {
     status: pt.task.status,
     estimatedMinutes: pt.task.estimatedMinutes,
     priority: pt.task.priority,
+    migrated: pt.migrated,
   }));
+  // Moved-on (">") entries stay visible but don't count toward the day.
+  const activeItems = items.filter((i) => !i.migrated);
 
-  const plannedMinutes = items.reduce(
+  const plannedMinutes = activeItems.reduce(
     (sum, i) => sum + (i.plannedMinutes ?? i.estimatedMinutes ?? 0),
     0,
   );
-  const doneCount = items.filter((i) => i.status === "DONE").length;
+  const doneCount = activeItems.filter((i) => i.status === "DONE").length;
+  const hasMigrated = activeItems.length < items.length;
 
   const greeting = `${greetingForHour(hour)}, ${capitalize(user.username)}`;
 
@@ -134,19 +140,20 @@ export default async function TodayPage() {
           <h2 id="today-plan-heading" className="journal-label">
             Today
           </h2>
-          {items.length > 0 && (
+          {activeItems.length > 0 && (
             <p className="journal-label tabular-nums" aria-live="polite">
-              {doneCount} of {items.length} done
+              {doneCount} of {activeItems.length} done
             </p>
           )}
         </div>
         <div className="px-4 pb-3 pt-1">
-          <PlanList dayKey={dayKey} initialItems={items} />
+          <PlanList dayKey={dayKey} tomorrowKey={tomorrowKey} initialItems={items} />
         </div>
         {items.length > 0 && (
           <p className="journal-label flex flex-wrap gap-x-4 gap-y-1 px-5 pb-4 normal-case tracking-normal">
             <span>• to do</span>
             <span>× done</span>
+            {hasMigrated && <span>&gt; moved to tomorrow</span>}
           </p>
         )}
       </section>
