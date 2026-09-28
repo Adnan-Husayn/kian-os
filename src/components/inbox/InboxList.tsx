@@ -209,7 +209,7 @@ export function InboxList({ captures }: InboxListProps) {
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18 }}
-          className="sticky top-0 z-10 mt-3 flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 shadow-sm"
+          className="sticky top-0 z-10 mt-3 flex flex-wrap items-center gap-1.5 index-card px-3 py-2 shadow-sm"
           role="toolbar"
           aria-label="Bulk actions"
         >
@@ -253,7 +253,7 @@ export function InboxList({ captures }: InboxListProps) {
         {notice ?? ""}
       </p>
 
-      <ul className="mt-1 space-y-2" aria-label="Captures">
+      <ul className="index-card mt-1 px-4 py-2" aria-label="Captures">
         {visible.map((capture) => {
           const meta = TYPE_META[capture.type];
           const TypeIcon = meta.icon;
@@ -264,7 +264,7 @@ export function InboxList({ captures }: InboxListProps) {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.18 }}
               className={cn(
-                "flex items-start gap-3 rounded-lg border border-border bg-surface px-3.5 py-3",
+                "flex items-start gap-3 log-row px-3.5 py-3",
                 capture.processed && "opacity-60",
               )}
             >

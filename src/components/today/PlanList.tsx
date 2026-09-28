@@ -3,7 +3,6 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import {
-  Check,
   ArrowUp,
   ArrowDown,
   CalendarX,
@@ -13,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
+import { BulletMark } from "@/components/ui/bullet-mark";
 import {
   reorderPlanTasks,
   togglePlanTaskComplete,
@@ -161,10 +161,8 @@ export function PlanList({ dayKey, initialItems }: PlanListProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
             className={cn(
-              "group flex items-center gap-3 rounded-lg border bg-surface px-3 py-2.5 transition-colors duration-150",
-              dropIndex === index && dragIndex !== index
-                ? "border-accent"
-                : "border-border",
+              "group log-row flex items-center gap-3 px-1 py-2.5 transition-colors duration-150",
+              dropIndex === index && dragIndex !== index && "border-b-accent",
               dragIndex === index && "opacity-40",
             )}
           >
@@ -183,26 +181,15 @@ export function PlanList({ dayKey, initialItems }: PlanListProps) {
               onClick={() => void handleToggle(item, !done)}
               whileTap={{ scale: 0.85 }}
               transition={{ duration: 0.15 }}
-              className={cn(
-                "flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors duration-200",
-                done
-                  ? "border-accent bg-accent text-white"
-                  : "border-border bg-surface hover:border-accent",
-              )}
+              className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm hover:bg-accent-soft"
             >
-              <motion.span
-                initial={false}
-                animate={{ scale: done ? 1 : 0, opacity: done ? 1 : 0 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
-                <Check className="size-3.5" aria-hidden="true" />
-              </motion.span>
+              <BulletMark done={done} />
             </motion.button>
 
             <div className="relative min-w-0 flex-1">
               <p
                 className={cn(
-                  "truncate text-sm font-medium transition-colors duration-200",
+                  "truncate text-base transition-colors duration-200",
                   done && "text-text-secondary",
                 )}
               >
@@ -219,7 +206,7 @@ export function PlanList({ dayKey, initialItems }: PlanListProps) {
             </div>
 
             {mins && (
-              <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent">
+              <span className="shrink-0 font-mono text-xs tabular-nums text-text-secondary">
                 {mins}
               </span>
             )}

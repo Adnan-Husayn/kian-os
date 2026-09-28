@@ -356,7 +356,7 @@ export function PlanTomorrow({
                 <ul className="space-y-1.5">
                   {candidates.map((c) => (
                     <li key={c.id}>
-                      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 transition-colors duration-150 hover:border-accent/50 has-checked:border-accent">
+                      <label className="flex cursor-pointer items-center gap-3 log-row px-3 py-2.5 transition-colors duration-150 hover:border-accent/50 has-checked:border-accent">
                         <Checkbox
                           checked={selected.has(c.id)}
                           onChange={() => toggleSelected(c.id)}
@@ -440,7 +440,7 @@ export function PlanTomorrow({
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.18 }}
-                          className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2"
+                          className="flex items-center gap-3 log-row px-3 py-2"
                         >
                           <span className="min-w-0 flex-1 truncate text-sm">
                             {item.title}

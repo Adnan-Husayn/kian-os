@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Crosshair, Pencil, Check, X } from "lucide-react";
+import { Pencil, Check, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,14 +38,16 @@ export function FocusCard({ dayKey, initialFocus }: FocusCardProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
-      <Card className="overflow-hidden">
-        <CardContent className="p-5 md:p-6">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-text-secondary">
-            <Crosshair className="size-3.5" aria-hidden="true" />
-            Today&apos;s focus
-          </div>
+      <Card className="overflow-hidden -rotate-[0.4deg]">
+        <div className="index-card-head journal-label flex items-center gap-2 px-5 pb-2 pt-4 md:px-6">
+          <span aria-hidden="true" className="font-mono text-sm text-mark">
+            ★
+          </span>
+          Today&apos;s focus
+        </div>
+        <CardContent className="p-5 pt-3 md:p-6 md:pt-4">
           {editing ? (
-            <div className="mt-3 flex flex-col gap-3">
+            <div className="flex flex-col gap-3">
               <Input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -80,8 +82,8 @@ export function FocusCard({ dayKey, initialFocus }: FocusCardProps) {
               </div>
             </div>
           ) : (
-            <div className="mt-2 flex items-start justify-between gap-4">
-              <p className="text-xl font-semibold leading-snug tracking-tight md:text-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <p className="text-2xl leading-snug md:text-[1.75rem]">
                 {focus ? (
                   focus
                 ) : (

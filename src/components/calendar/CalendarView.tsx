@@ -160,7 +160,7 @@ function DayAgendaTaskRow({
   }
 
   return (
-    <li className="flex items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-2">
+    <li className="flex items-center gap-2 log-row px-2.5 py-2">
       <Checkbox
         checked={done}
         disabled={busy}

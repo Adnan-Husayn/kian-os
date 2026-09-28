@@ -11,7 +11,6 @@ import { PlanList, type PlanListItem } from "@/components/today/PlanList";
 import { InlineCapture } from "@/components/today/InlineCapture";
 import { OverloadNudge } from "@/components/today/OverloadNudge";
 import { FirstDay } from "@/components/today/FirstDay";
-import { Clock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +22,36 @@ function greetingForHour(hour: number): string {
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
+}
+
+/**
+ * Daily-log heading: the big day number, the date, and the greeting, with a
+ * red ribbon bookmark hanging from the top of the page.
+ */
+function DailyLogHeader({
+  dayNumber,
+  dateLabel,
+  greeting,
+}: {
+  dayNumber: string;
+  dateLabel: string;
+  greeting: string;
+}) {
+  return (
+    <header className="relative flex items-end gap-4 pr-10">
+      <span
+        aria-hidden="true"
+        className="absolute -top-6 right-2 h-20 w-3.5 bg-mark [clip-path:polygon(0_0,100%_0,100%_100%,50%_82%,0_100%)] md:right-4"
+      />
+      <span className="text-6xl font-semibold leading-[0.85] tabular-nums">
+        {dayNumber}
+      </span>
+      <div className="min-w-0">
+        <h1 className="text-2xl italic leading-tight md:text-3xl">{dateLabel}</h1>
+        <p className="journal-label mt-1">{greeting} · Daily log · IST</p>
+      </div>
+    </header>
+  );
 }
 
 function capitalize(name: string): string {
@@ -56,7 +85,8 @@ export default async function TodayPage() {
   });
 
   const hour = Number(formatKolkata(now, "H"));
-  const dateLabel = formatKolkata(now, "EEEE · MMMM d");
+  const dayNumber = formatKolkata(now, "d");
+  const dateLabel = formatKolkata(now, "EEEE, MMMM");
 
   const isFresh =
     !plan.mainFocus && plan.tasks.length === 0 && !plan.intention;
@@ -77,15 +107,12 @@ export default async function TodayPage() {
   );
   const doneCount = items.filter((i) => i.status === "DONE").length;
 
+  const greeting = `${greetingForHour(hour)}, ${capitalize(user.username)}`;
+
   if (isFresh) {
     return (
       <div className="space-y-6">
-        <header>
-          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-            {greetingForHour(hour)}, {capitalize(user.username)}.
-          </h1>
-          <p className="mt-1 text-sm text-text-secondary">{dateLabel}</p>
-        </header>
+        <DailyLogHeader dayNumber={dayNumber} dateLabel={dateLabel} greeting={greeting} />
         <FirstDay dayKey={dayKey} />
       </div>
     );
@@ -93,12 +120,7 @@ export default async function TodayPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-          {greetingForHour(hour)}, {capitalize(user.username)}.
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">{dateLabel}</p>
-      </header>
+      <DailyLogHeader dayNumber={dayNumber} dateLabel={dateLabel} greeting={greeting} />
 
       <FocusCard dayKey={dayKey} initialFocus={plan.mainFocus} />
 
@@ -107,21 +129,26 @@ export default async function TodayPage() {
         thresholdMinutes={Math.round(DEFAULT_DAY_MINUTES * OVERLOAD_RATIO)}
       />
 
-      <section aria-labelledby="today-plan-heading" className="space-y-3">
-        <div className="flex items-baseline justify-between">
-          <h2
-            id="today-plan-heading"
-            className="text-xs font-medium uppercase tracking-[0.12em] text-text-secondary"
-          >
+      <section aria-labelledby="today-plan-heading" className="index-card">
+        <div className="index-card-head flex items-baseline justify-between px-5 pb-2 pt-4">
+          <h2 id="today-plan-heading" className="journal-label">
             Today
           </h2>
           {items.length > 0 && (
-            <p className="text-xs text-text-secondary" aria-live="polite">
+            <p className="journal-label tabular-nums" aria-live="polite">
               {doneCount} of {items.length} done
             </p>
           )}
         </div>
-        <PlanList dayKey={dayKey} initialItems={items} />
+        <div className="px-4 pb-3 pt-1">
+          <PlanList dayKey={dayKey} initialItems={items} />
+        </div>
+        {items.length > 0 && (
+          <p className="journal-label flex flex-wrap gap-x-4 gap-y-1 px-5 pb-4 normal-case tracking-normal">
+            <span>• to do</span>
+            <span>× done</span>
+          </p>
+        )}
       </section>
 
       <section aria-label="Quick capture" className="space-y-2">
@@ -129,31 +156,33 @@ export default async function TodayPage() {
       </section>
 
       {upNext.length > 0 && (
-        <section aria-labelledby="up-next-heading" className="space-y-3">
+        <section aria-labelledby="up-next-heading" className="index-card">
           <h2
             id="up-next-heading"
-            className="text-xs font-medium uppercase tracking-[0.12em] text-text-secondary"
+            className="index-card-head journal-label px-5 pb-2 pt-4"
           >
             Up next
           </h2>
-          <ul className="space-y-1.5">
+          <ul className="px-4 pb-3">
             {upNext.map((t) => (
               <li
                 key={t.id}
-                className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2"
+                className="log-row flex items-center gap-3 px-1 py-2.5"
               >
-                <Clock
-                  className="size-4 shrink-0 text-text-secondary"
+                <span
                   aria-hidden="true"
-                />
-                <span className="shrink-0 font-mono text-xs text-text-secondary">
+                  className="w-5 shrink-0 text-center font-mono text-sm text-text-secondary"
+                >
+                  ○
+                </span>
+                <span className="shrink-0 font-mono text-xs tabular-nums text-text-secondary">
                   {t.scheduledStartTime}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm">
+                <span className="min-w-0 flex-1 truncate text-base">
                   {t.title}
                 </span>
                 {t.estimatedMinutes != null && (
-                  <span className="shrink-0 text-xs text-text-secondary">
+                  <span className="shrink-0 font-mono text-xs tabular-nums text-text-secondary">
                     {t.estimatedMinutes}m
                   </span>
                 )}
@@ -162,7 +191,6 @@ export default async function TodayPage() {
           </ul>
         </section>
       )}
-
     </div>
   );
 }

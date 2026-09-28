@@ -51,7 +51,7 @@ export function DropdownMenu({
             role="menu"
             aria-label={label}
             className={cn(
-              "absolute z-50 mt-1 min-w-44 rounded-lg border border-border bg-surface p-1 shadow-lg",
+              "absolute z-50 mt-1 min-w-44 index-card p-1 shadow-lg",
               align === "right" ? "right-0" : "left-0",
               className,
             )}

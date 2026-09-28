@@ -52,7 +52,7 @@ export function Sidebar({ username }: { username: string }) {
       className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface md:flex"
     >
       <div className="flex h-14 items-center px-5">
-        <Link href="/today" className="text-base font-semibold tracking-tight">
+        <Link href="/today" className="text-xl italic tracking-tight">
           Kian&nbsp;OS
         </Link>
       </div>
@@ -71,12 +71,17 @@ export function Sidebar({ username }: { username: string }) {
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150",
                     active
-                      ? "bg-accent-soft font-medium text-accent"
+                      ? "font-medium text-text"
                       : "text-text-secondary hover:bg-accent-soft/50 hover:text-text",
                   )}
                 >
                   <Icon className="size-4 shrink-0" />
                   {item.label}
+                  {active && (
+                    <span aria-hidden="true" className="ml-auto font-mono text-lg leading-none text-mark">
+                      •
+                    </span>
+                  )}
                 </Link>
               </li>
             );
@@ -102,7 +107,7 @@ export function Sidebar({ username }: { username: string }) {
           className={cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150",
             pathname === "/settings"
-              ? "bg-accent-soft font-medium text-accent"
+              ? "font-medium text-text"
               : "text-text-secondary hover:bg-accent-soft/50 hover:text-text",
           )}
         >

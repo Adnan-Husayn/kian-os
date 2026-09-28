@@ -3,26 +3,39 @@
 /* Class-based dark mode (driven by next-themes, attribute="class"). */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * "Bullet journal on index cards": a dot-grid page (--bg + --dot), content on
+ * ruled index cards (--surface, --rule, red --mark header line), ink-blue
+ * pencil accent, bullet-journal marks for tasks (• to do, × done).
+ */
 :root {
   /* Kian OS light palette */
-  --bg: #f7f7f5;
-  --surface: #ffffff;
-  --text: #18181b;
-  --text-secondary: #71717a;
-  --border: #e4e4e7;
-  --accent: #6366f1; /* muted indigo */
-  --accent-soft: rgba(99, 102, 241, 0.12);
+  --bg: #f3f3ee; /* the page */
+  --surface: #fffefa; /* index card */
+  --text: #1c1c1e; /* ink */
+  --text-secondary: #67676d;
+  --border: #e0e0d8;
+  --accent: #2f4a9e; /* pencil blue */
+  --accent-soft: rgba(47, 74, 158, 0.1);
+  --dot: #cdcdc6; /* dot grid */
+  --rule: #d8e3f1; /* card ruling */
+  --mark: #c8352b; /* red ribbon + card header line */
+  --card-shadow: 0 1px 0 rgba(0, 0, 0, 0.03), 0 8px 20px -12px rgba(30, 30, 40, 0.28);
 }
 
 .dark {
-  /* Kian OS dark palette */
-  --bg: #101014;
-  --surface: #18181c;
-  --text: #f4f4f5;
-  --text-secondary: #a1a1aa;
-  --border: #27272a;
-  --accent: #818cf8; /* muted indigo, lifted for dark */
-  --accent-soft: rgba(129, 140, 248, 0.14);
+  /* Kian OS dark palette: charcoal page, soft grey cards */
+  --bg: #151618;
+  --surface: #1e1f22;
+  --text: #ecebe6;
+  --text-secondary: #9e9da4;
+  --border: #303136;
+  --accent: #9fb3ee;
+  --accent-soft: rgba(159, 179, 238, 0.13);
+  --dot: #2d2e33;
+  --rule: #2a3040;
+  --mark: #e06a5f;
+  --card-shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 10px 24px -14px rgba(0, 0, 0, 0.7);
 }
 
 @theme inline {
@@ -33,7 +46,10 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
-  --font-sans: var(--font-inter);
+  --color-mark: var(--mark);
+  --color-rule: var(--rule);
+  --font-sans: var(--font-newsreader);
+  --font-mono: var(--font-jetbrains);
 }
 
 html,
@@ -41,10 +57,16 @@ body {
   height: 100%;
 }
 
+/* Newsreader runs small; lift the base size a touch (all rem sizes follow). */
+html {
+  font-size: 106.25%;
+}
+
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -142,3 +164,53 @@ body {
   text-align: left;
 }
 .note-body th { font-weight: 600; background: var(--bg); }
+
+/* ---------------------------------------------------------------------------
+ * Bullet journal + index cards. In @layer components so Tailwind utilities on
+ * the same element (padding, gaps) still win.
+ * ------------------------------------------------------------------------- */
+@layer components {
+  /* Dot-grid page behind the app content. */
+  .dot-page {
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--dot) 1.1px, transparent 1.3px);
+    background-size: 22px 22px;
+    background-position: 11px 11px;
+  }
+
+  /* An index card: off-white stock, barely rounded, lifted off the page. */
+  .index-card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    box-shadow: var(--card-shadow);
+  }
+
+  /* Card header sits above the red line, like a real index card. */
+  .index-card-head {
+    border-bottom: 2px solid var(--mark);
+  }
+
+  /* Ruled lines for lists written on a card. */
+  .index-card-ruled {
+    background-image: repeating-linear-gradient(
+      transparent 0 43px,
+      var(--rule) 43px 44px
+    );
+  }
+
+  /* One entry in a log: a ruled line, not a box. */
+  .log-row {
+    background-color: transparent;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* Uppercase mono label used for section names and figures. */
+  .journal-label {
+    font-family: var(--font-jetbrains), ui-monospace, monospace;
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+}

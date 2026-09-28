@@ -159,7 +159,7 @@ export function TasksList({ tasks, projects }: TasksListProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.18 }}
-        className="mt-4 space-y-2"
+        className="index-card mt-4 px-4 py-2"
         role="list"
         aria-label="Tasks"
       >

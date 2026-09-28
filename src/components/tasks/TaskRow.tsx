@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Check, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import { toggleTaskDone } from "@/actions/tasks";
 import { cn } from "@/lib/utils";
 import { dayKeyKolkata, formatKolkata, startOfDayKolkata } from "@/lib/dates";
 import { Badge } from "@/components/ui/badge";
+import { BulletMark } from "@/components/ui/bullet-mark";
 import type { TaskListItem } from "@/components/tasks/types";
 
 interface TaskRowProps {
@@ -49,8 +50,8 @@ export function TaskRow({ task }: TaskRowProps) {
   return (
     <div
       className={cn(
-        "group flex items-start gap-3 rounded-lg border border-border bg-surface px-3.5 py-3",
-        "transition-colors duration-150 hover:border-text-secondary/40",
+        "group log-row flex items-start gap-3 px-1 py-3",
+        "transition-colors duration-150 hover:bg-accent-soft/40",
       )}
     >
       <button
@@ -60,21 +61,16 @@ export function TaskRow({ task }: TaskRowProps) {
         aria-label={done ? `Mark "${task.title}" as not done` : `Mark "${task.title}" as done`}
         onClick={() => void onToggle()}
         disabled={busy}
-        className={cn(
-          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border transition-all duration-150",
-          done
-            ? "border-accent bg-accent text-white"
-            : "border-text-secondary/50 hover:border-accent hover:bg-accent-soft",
-        )}
+        className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm hover:bg-accent-soft disabled:cursor-not-allowed"
       >
-        {done && <Check className="size-3" aria-hidden="true" />}
+        <BulletMark done={done} />
       </button>
 
       <div className="min-w-0 flex-1">
         <Link
           href={`/tasks/${task.id}`}
           className={cn(
-            "block truncate text-sm font-medium text-text hover:text-accent",
+            "block truncate text-base text-text hover:text-accent",
             done && "text-text-secondary line-through decoration-text-secondary/50",
           )}
         >

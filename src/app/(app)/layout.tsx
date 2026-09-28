@@ -19,7 +19,7 @@ export default async function AppLayout({
 
   return (
     <ShortcutProvider>
-      <div className="flex min-h-dvh bg-bg text-text">
+      <div className="dot-page flex min-h-dvh text-text">
         <Sidebar username={user.username} />
         <div className="flex min-w-0 flex-1 flex-col">
           <main className="mx-auto w-full max-w-4xl flex-1 px-4 pb-24 pt-6 md:px-8 md:pb-12">

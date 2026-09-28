@@ -176,7 +176,7 @@ export function ReviewClient({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, x: 24 }}
                   transition={{ duration: 0.18 }}
-                  className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5"
+                  className="flex items-center gap-2 log-row px-3 py-2.5"
                 >
                   <span className="min-w-0 flex-1 truncate text-sm">
                     {item.title}
@@ -215,7 +215,7 @@ export function ReviewClient({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2 }}
-            className="rounded-lg border border-border bg-surface px-4 py-5 text-center text-sm text-text-secondary"
+            className="index-card px-4 py-5 text-center text-sm text-text-secondary"
           >
             You don&apos;t need to deal with all of this right now.
           </motion.p>
