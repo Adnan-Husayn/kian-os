@@ -4,7 +4,10 @@
 	"name": "kian-os-app",
 	"main": ".open-next/worker.js",
 	"compatibility_date": "2026-09-01",
-	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
@@ -16,7 +19,19 @@
 			"service": "kian-os-app"
 		}
 	],
-	"observability": { "enabled": true }
+	"observability": {
+		"enabled": true
+	},
+	"hyperdrive": [
+		{
+			// Warm, pooled connections to Neon (caching disabled). Created with
+			// `wrangler hyperdrive create kian-os-db --caching-disabled`.
+			"binding": "HYPERDRIVE",
+			"id": "56ddb271359a4697993d83aecb34a0d3",
+			// Local builds/previews only: the throwaway dev database.
+			"localConnectionString": "postgresql://kian@127.0.0.1:5544/kianos_dev"
+		}
+	]
 	// Secrets (set with `npx wrangler secret put`, never committed):
 	//   DATABASE_URL  Neon pooled connection string
 }

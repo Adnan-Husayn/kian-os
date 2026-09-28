@@ -2,12 +2,27 @@ import { cache } from "react";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+
+/**
+ * On Workers, connect through the HYPERDRIVE binding when it is configured:
+ * Hyperdrive keeps warm connections to Neon, so a request skips the TCP, TLS
+ * and auth handshakes that otherwise cost ~1s per request. Everywhere else
+ * (and on Workers without the binding) use DATABASE_URL.
+ */
+function connectionString(): string | undefined {
+  if (isWorkers) {
+    const env = getCloudflareContext().env as { HYPERDRIVE?: { connectionString: string } };
+    if (env.HYPERDRIVE) return env.HYPERDRIVE.connectionString;
+  }
+  return process.env.DATABASE_URL;
+}
 
 function createClient(): PrismaClient {
   // Lazy: Pool does not open connections until the first query, so this is
   // safe to evaluate at import time (including during `next build`).
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: connectionString(),
     max: Number(process.env.PG_POOL_MAX ?? 5),
   });
   return new PrismaClient({
