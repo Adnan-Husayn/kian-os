@@ -1,0 +1,256 @@
+// Kian OS — Phase 1 data model
+// PostgreSQL via Prisma. Every model (except User) carries userId + relation to User.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // NOTE (Prisma 7): the connection URL lives in prisma.config.ts, not here.
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum TaskStatus {
+  INBOX
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+  SOMEDAY
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum IdeaStatus {
+  NEW
+  EXPLORING
+  TURNED_INTO_PROJECT
+  ARCHIVED
+}
+
+enum CaptureType {
+  TASK
+  IDEA
+  NOTE
+  REMINDER
+  UNKNOWN
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id                  String   @id @default(cuid())
+  username            String   @unique
+  passwordHash        String
+  // Consecutive failed logins. Reset to 0 on success and whenever a lockout
+  // engages (see lockedUntil / lockoutCount).
+  failedLoginAttempts Int      @default(0)
+  // Time-based escalating lockout: while this is in the future, login fails
+  // with the generic error. Null when no lockout is active.
+  lockedUntil         DateTime?
+  // How many lockouts have engaged (drives the escalation tier). Reset to 0
+  // on successful login.
+  lockoutCount        Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  sessions       Session[]
+  tasks          Task[]
+  projects       Project[]
+  ideas          Idea[]
+  notes          Note[]
+  journalEntries JournalEntry[]
+  dailyPlans     DailyPlan[]
+  captures       Capture[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  // SHA-256 hash of the opaque session token. The raw token only ever lives
+  // in the httpOnly cookie, never in the database.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Task {
+  id                 String       @id @default(cuid())
+  userId             String
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title              String
+  description        String?
+  status             TaskStatus   @default(TODO)
+  priority           TaskPriority @default(MEDIUM)
+  dueDate            DateTime?
+  // scheduledDate has date-only semantics (midnight in Asia/Kolkata); the
+  // optional start/end strings carry the time-of-day separately.
+  scheduledDate      DateTime?
+  scheduledStartTime String?
+  scheduledEndTime   String?
+  estimatedMinutes   Int?
+  actualMinutes      Int?
+  projectId          String?
+  // Deleting a project must NEVER delete its tasks — SetNull instead.
+  project            Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  parentTaskId       String?
+  // Deleting a task deletes its subtasks (never a project).
+  parentTask         Task?        @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks           Task[]       @relation("TaskSubtasks")
+  completedAt        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  dailyPlanTasks DailyPlanTask[]
+
+  @@index([userId, status])
+  @@index([userId, scheduledDate])
+  @@index([userId, dueDate])
+  @@index([projectId])
+  @@index([parentTaskId])
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  color       String?       @default("#6366f1")
+  status      ProjectStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  tasks Task[]
+  notes Note[]
+
+  @@index([userId, status])
+}
+
+model Idea {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  content   String?    @default("")
+  category  String?    @default("General")
+  status    IdeaStatus @default(NEW)
+  // Free-form exploration fields, edited on the idea detail page.
+  why         String?
+  couldBecome String?
+  nextAction  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId, status])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  content   String?  @default("")
+  tags      String[] @default([])
+  pinned    Boolean  @default(false)
+  projectId String?
+  // Deleting a project must NEVER delete its notes — SetNull instead.
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, pinned])
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // One entry per user per day (date-only semantics, midnight Asia/Kolkata).
+  date      DateTime
+  content   String?  @default("")
+  // mood: "low" | "okay" | "good" | "great" (words only, no emojis in UI)
+  mood      String?
+  // energy: "low" | "medium" | "high"
+  energy    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model DailyPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // One plan per user per day (date-only semantics, midnight Asia/Kolkata).
+  date        DateTime
+  mainFocus   String?
+  intention   String?
+  energyLevel String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tasks DailyPlanTask[]
+
+  @@unique([userId, date])
+}
+
+model DailyPlanTask {
+  id             String    @id @default(cuid())
+  dailyPlanId    String
+  dailyPlan      DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  taskId         String
+  task           Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  position       Int       @default(0)
+  plannedMinutes Int?
+
+  @@unique([dailyPlanId, taskId])
+  @@index([taskId])
+}
+
+model Capture {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  type      CaptureType @default(UNKNOWN)
+  processed Boolean     @default(false)
+  createdAt DateTime    @default(now())
+
+  @@index([userId, processed])
+}
+
+// ---------------------------------------------------------------------------
+// Auth hardening (Vercel/serverless-safe)
+// ---------------------------------------------------------------------------
+
+model LoginAttempt {
+  id String @id @default(cuid())
+  // Client IP (from x-forwarded-for) the attempt came from.
+  ip String
+  createdAt DateTime @default(now())
+
+  @@index([ip, createdAt])
+}

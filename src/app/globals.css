@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (driven by next-themes, attribute="class"). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Kian OS light palette */
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --text: #18181b;
+  --text-secondary: #71717a;
+  --border: #e4e4e7;
+  --accent: #6366f1; /* muted indigo */
+  --accent-soft: rgba(99, 102, 241, 0.12);
+}
+
+.dark {
+  /* Kian OS dark palette */
+  --bg: #101014;
+  --surface: #18181c;
+  --text: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --border: #27272a;
+  --accent: #818cf8; /* muted indigo, lifted for dark */
+  --accent-soft: rgba(129, 140, 248, 0.14);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: var(--font-inter);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Calm, visible focus rings for keyboard users. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Slim, quiet scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+}
+
+/* Reduced motion: honor the OS preference globally. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Rendered note markdown (react-markdown, no plugins). Calm, quiet type. */
+.note-body {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+.note-body > *:first-child { margin-top: 0; }
+.note-body > *:last-child { margin-bottom: 0; }
+.note-body h1, .note-body h2, .note-body h3, .note-body h4 {
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1.25em 0 0.5em;
+}
+.note-body h1 { font-size: 1.25rem; }
+.note-body h2 { font-size: 1.125rem; }
+.note-body h3 { font-size: 1rem; }
+.note-body h4 { font-size: 0.9375rem; }
+.note-body p { margin: 0.75em 0; }
+.note-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.note-body strong { font-weight: 600; }
+.note-body ul, .note-body ol { margin: 0.75em 0; padding-left: 1.5rem; }
+.note-body ul { list-style: disc; }
+.note-body ol { list-style: decimal; }
+.note-body li { margin: 0.25em 0; }
+.note-body li > ul, .note-body li > ol { margin: 0.25em 0; }
+.note-body blockquote {
+  margin: 0.75em 0;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border);
+  color: var(--text-secondary);
+}
+.note-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+}
+.note-body pre {
+  margin: 0.75em 0;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  overflow-x: auto;
+}
+.note-body pre code { background: none; padding: 0; }
+.note-body hr { margin: 1.5em 0; border: 0; border-top: 1px solid var(--border); }
+.note-body table {
+  margin: 0.75em 0;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.note-body th, .note-body td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.note-body th { font-weight: 600; background: var(--bg); }
