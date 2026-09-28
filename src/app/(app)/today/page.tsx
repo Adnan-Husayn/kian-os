@@ -66,25 +66,27 @@ export default async function TodayPage() {
   const todayStart = kolkataDateFromDayKey(dayKey);
   const tomorrowKey = dayKeyKolkata(addDaysKolkata(todayStart, 1));
 
-  const plan = await getOrCreateDailyPlan(dayKey);
-
-  // "UP NEXT": tasks scheduled for today with a start time, not finished.
-  const upNext = await prisma.task.findMany({
-    where: {
-      userId: user.id,
-      scheduledDate: todayStart,
-      scheduledStartTime: { not: null },
-      status: { in: ["TODO", "IN_PROGRESS"] },
-    },
-    orderBy: { scheduledStartTime: "asc" },
-    take: 8,
-    select: {
-      id: true,
-      title: true,
-      scheduledStartTime: true,
-      estimatedMinutes: true,
-    },
-  });
+  // Independent reads run in parallel: each is a round trip to the database.
+  const [plan, upNext] = await Promise.all([
+    getOrCreateDailyPlan(dayKey),
+    // "UP NEXT": tasks scheduled for today with a start time, not finished.
+    prisma.task.findMany({
+      where: {
+        userId: user.id,
+        scheduledDate: todayStart,
+        scheduledStartTime: { not: null },
+        status: { in: ["TODO", "IN_PROGRESS"] },
+      },
+      orderBy: { scheduledStartTime: "asc" },
+      take: 8,
+      select: {
+        id: true,
+        title: true,
+        scheduledStartTime: true,
+        estimatedMinutes: true,
+      },
+    }),
+  ]);
 
   const hour = Number(formatKolkata(now, "H"));
   const dayNumber = formatKolkata(now, "d");

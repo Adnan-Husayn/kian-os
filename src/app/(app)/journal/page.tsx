@@ -35,16 +35,18 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
     raw && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : dayKeyKolkata();
   const date = kolkataDateFromDayKey(dayKey);
 
-  const entry = await getJournalEntry(dayKey);
-
   // Recent entries: last 7 across month boundaries, excluding the open day.
+  // All three reads run in parallel (each is a round trip to the database);
+  // the previous month is fetched up front instead of only when needed.
   const monthKey = dayKey.slice(0, 7);
-  let recent = await listJournalEntries(monthKey);
-  if (recent.length < 8) {
-    const more = await listJournalEntries(prevMonthKey(monthKey));
-    recent = [...recent, ...more];
-  }
-  recent = recent.filter((e) => e.dayKey !== dayKey).slice(0, 7);
+  const [entry, thisMonth, prevMonth] = await Promise.all([
+    getJournalEntry(dayKey),
+    listJournalEntries(monthKey),
+    listJournalEntries(prevMonthKey(monthKey)),
+  ]);
+  const recent = [...thisMonth, ...prevMonth]
+    .filter((e) => e.dayKey !== dayKey)
+    .slice(0, 7);
 
   return (
     <div className="space-y-6">

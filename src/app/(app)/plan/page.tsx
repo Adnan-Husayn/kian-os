@@ -16,28 +16,32 @@ export default async function PlanPage() {
   const tomorrowStart = addDaysKolkata(todayKolkata(), 1);
   const tomorrowKey = dayKeyKolkata(tomorrowStart);
 
-  const plan = await getOrCreateDailyPlan(tomorrowKey);
+  // Plan and open tasks load in parallel (each is a round trip to the
+  // database); tasks already in tomorrow's plan are filtered out afterwards.
+  const [plan, openTasks] = await Promise.all([
+    getOrCreateDailyPlan(tomorrowKey),
+    prisma.task.findMany({
+      where: {
+        userId: user.id,
+        status: { in: ["TODO", "IN_PROGRESS"] },
+      },
+      orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
+      take: 200,
+      select: {
+        id: true,
+        title: true,
+        estimatedMinutes: true,
+        priority: true,
+        dueDate: true,
+      },
+    }),
+  ]);
+
   // Entries already moved on from tomorrow (">") aren't part of its plan.
   const planTasks = plan.tasks.filter((t) => !t.migrated);
-  const plannedIds = planTasks.map((t) => t.taskId);
-
+  const plannedIds = new Set(planTasks.map((t) => t.taskId));
   // Candidate list: open tasks not already in tomorrow's plan.
-  const candidates = await prisma.task.findMany({
-    where: {
-      userId: user.id,
-      status: { in: ["TODO", "IN_PROGRESS"] },
-      id: { notIn: plannedIds },
-    },
-    orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
-    take: 100,
-    select: {
-      id: true,
-      title: true,
-      estimatedMinutes: true,
-      priority: true,
-      dueDate: true,
-    },
-  });
+  const candidates = openTasks.filter((t) => !plannedIds.has(t.id)).slice(0, 100);
 
   const existingItems = planTasks.map((pt) => ({
     taskId: pt.taskId,

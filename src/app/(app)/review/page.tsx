@@ -18,18 +18,21 @@ export default async function ReviewPage() {
   const tomorrowStart = addDaysKolkata(todayStart, 1);
   const tomorrowKey = dayKeyKolkata(tomorrowStart);
 
-  const plan = await getOrCreateDailyPlan(dayKey);
-
-  const doneToday = await prisma.task.findMany({
-    where: {
-      userId: user.id,
-      status: "DONE",
-      completedAt: { gte: todayStart, lt: tomorrowStart },
-    },
-    orderBy: { completedAt: "desc" },
-    take: 50,
-    select: { id: true, title: true },
-  });
+  // Independent reads run in parallel: each is a round trip to the database.
+  const [plan, doneToday, tomorrowPlan] = await Promise.all([
+    getOrCreateDailyPlan(dayKey),
+    prisma.task.findMany({
+      where: {
+        userId: user.id,
+        status: "DONE",
+        completedAt: { gte: todayStart, lt: tomorrowStart },
+      },
+      orderBy: { completedAt: "desc" },
+      take: 50,
+      select: { id: true, title: true },
+    }),
+    getDailyPlan(tomorrowKey),
+  ]);
 
   const incomplete = plan.tasks
     .filter(
@@ -43,8 +46,6 @@ export default async function ReviewPage() {
       title: pt.task.title,
       plannedMinutes: pt.plannedMinutes ?? pt.task.estimatedMinutes,
     }));
-
-  const tomorrowPlan = await getDailyPlan(tomorrowKey);
 
   return (
     <ReviewClient
