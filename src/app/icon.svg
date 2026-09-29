@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Kian OS: an index card with the red ribbon bookmark and bullet-journal
+       entries (• to do, > moved). Filled shapes only, so it renders the same
+       in every browser and icon converter. -->
+  <rect x="2" y="2" width="60" height="60" rx="11" fill="#1c1c1e"/>
+  <rect x="6" y="6" width="52" height="52" rx="7" fill="#fffefa"/>
+  <path d="M39 6h13v26l-6.5-5.5L39 32z" fill="#c8352b"/>
+  <circle cx="16" cy="26" r="4.5" fill="#1c1c1e"/>
+  <rect x="24" y="23" width="11" height="6" rx="3" fill="#1c1c1e"/>
+  <path d="M11.5 37.5l3-3 8 7.5-8 7.5-3-3 4.8-4.5z" fill="#c8352b"/>
+  <rect x="26" y="39" width="24" height="6" rx="3" fill="#1c1c1e"/>
+</svg>
