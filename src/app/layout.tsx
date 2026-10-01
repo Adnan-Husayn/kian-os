@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -20,6 +20,16 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Kian OS",
   description: "Kian's personal life-management system.",
+  // Home-screen install on iOS: open full-screen with the app's name.
+  appleWebApp: { capable: true, title: "Kian OS", statusBarStyle: "default" },
+};
+
+// Browser / status bar color follows the page background in each theme.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3f3ee" },
+    { media: "(prefers-color-scheme: dark)", color: "#151618" },
+  ],
 };
 
 export default function RootLayout({

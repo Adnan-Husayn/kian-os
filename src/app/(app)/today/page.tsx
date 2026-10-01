@@ -12,6 +12,7 @@ import { PlanList, type PlanListItem } from "@/components/today/PlanList";
 import { InlineCapture } from "@/components/today/InlineCapture";
 import { OverloadNudge } from "@/components/today/OverloadNudge";
 import { FirstDay } from "@/components/today/FirstDay";
+import { quoteByline, quoteForDay, type Quote } from "@/lib/quotes";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,20 @@ function DailyLogHeader({
         <p className="journal-label mt-1">{greeting} · Daily log · IST</p>
       </div>
     </header>
+  );
+}
+
+/** The day's quote, written under the date like a line copied into a journal. */
+function DailyQuote({ quote }: { quote: Quote }) {
+  return (
+    <figure className="border-l-2 border-mark pl-4">
+      <blockquote className="text-lg italic leading-snug text-text">
+        {quote.text}
+      </blockquote>
+      <figcaption className="journal-label mt-1.5 normal-case tracking-normal">
+        {quoteByline(quote)}
+      </figcaption>
+    </figure>
   );
 }
 
@@ -116,11 +131,13 @@ export default async function TodayPage() {
   const hasMigrated = activeItems.length < items.length;
 
   const greeting = `${greetingForHour(hour)}, ${capitalize(user.username)}`;
+  const quote = quoteForDay(dayKey);
 
   if (isFresh) {
     return (
       <div className="space-y-6">
         <DailyLogHeader dayNumber={dayNumber} dateLabel={dateLabel} greeting={greeting} />
+        <DailyQuote quote={quote} />
         <FirstDay dayKey={dayKey} />
       </div>
     );
@@ -129,6 +146,8 @@ export default async function TodayPage() {
   return (
     <div className="space-y-6">
       <DailyLogHeader dayNumber={dayNumber} dateLabel={dateLabel} greeting={greeting} />
+
+      <DailyQuote quote={quote} />
 
       <FocusCard dayKey={dayKey} initialFocus={plan.mainFocus} />
 

@@ -11,15 +11,17 @@ import {
   User,
   LogOut,
   Database,
+  Download,
   Trash2,
   AlertTriangle,
 } from "lucide-react";
 import { logout } from "@/actions/auth";
 import { deleteAllUserData } from "@/actions/settings";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KOLKATA_TZ } from "@/lib/dates";
+import { KOLKATA_TZ, dayKeyKolkata, formatDay } from "@/lib/dates";
+import { isMonthKey } from "@/lib/export";
 import { cn } from "@/lib/utils";
 
 function Section({
@@ -36,7 +38,7 @@ function Section({
   return (
     <section
       aria-label={title}
-      className="rounded-xl border border-border bg-surface p-5"
+      className="index-card p-5"
     >
       <h2 className="flex items-center gap-2 text-sm font-semibold text-text">
         <Icon className="size-4 text-accent" aria-hidden="true" />
@@ -144,6 +146,106 @@ function AccountSection({ username }: { username: string }) {
   );
 }
 
+/** Where this browser remembers the last export (per device, not synced). */
+const LAST_EXPORT_KEY = "kianos:lastExportAt";
+const EXPORT_REMINDER_DAYS = 30;
+
+function subscribeToStorage(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener("kianos:export", onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener("kianos:export", onChange);
+  };
+}
+
+function readLastExport(): string | null {
+  try {
+    return window.localStorage.getItem(LAST_EXPORT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function ExportSection() {
+  const [month, setMonth] = React.useState(() => dayKeyKolkata().slice(0, 7));
+  // Clock read once on mount (render must stay pure).
+  const [mountedAt] = React.useState(() => Date.now());
+  const lastExport = React.useSyncExternalStore(
+    subscribeToStorage,
+    readLastExport,
+    () => null,
+  );
+
+  function rememberExport() {
+    try {
+      window.localStorage.setItem(LAST_EXPORT_KEY, new Date().toISOString());
+    } catch {
+      // Private mode or blocked storage: the download still works.
+    }
+    window.dispatchEvent(new Event("kianos:export"));
+  }
+
+  const lastDate = lastExport ? new Date(lastExport) : null;
+  const validLast = lastDate && !Number.isNaN(lastDate.getTime()) ? lastDate : null;
+  const overdue =
+    !validLast ||
+    mountedAt - validLast.getTime() > EXPORT_REMINDER_DAYS * 86_400_000;
+  const monthValid = isMonthKey(month);
+
+  return (
+    <Section
+      icon={Download}
+      title="Export"
+      description="Download your tasks, projects, notes, ideas, journal and daily plans as a JSON file. Keep a copy each month."
+    >
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="export-month">Month</Label>
+          <Input
+            id="export-month"
+            type="month"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className="w-44"
+          />
+        </div>
+        <a
+          href={monthValid ? `/export?month=${month}` : undefined}
+          aria-disabled={!monthValid}
+          onClick={rememberExport}
+          className={cn(
+            buttonVariants({ variant: "default", size: "default" }),
+            !monthValid && "pointer-events-none opacity-50",
+          )}
+        >
+          <Download className="size-4" aria-hidden="true" />
+          Download this month
+        </a>
+        <a
+          href="/export"
+          onClick={rememberExport}
+          className={buttonVariants({ variant: "outline", size: "default" })}
+        >
+          Download everything
+        </a>
+      </div>
+      <p
+        className={cn(
+          "mt-3 text-sm",
+          overdue ? "text-mark" : "text-text-secondary",
+        )}
+      >
+        {validLast
+          ? overdue
+            ? `Last export from this device: ${formatDay(validLast)}. That's over a month ago — time for a fresh copy.`
+            : `Last export from this device: ${formatDay(validLast)}.`
+          : "No export from this device yet."}
+      </p>
+    </Section>
+  );
+}
+
 function DataSection() {
   return (
     <Section
@@ -237,7 +339,7 @@ function DangerZoneSection() {
   );
 }
 
-/** Settings: appearance, timezone, account, data notes, danger zone. */
+/** Settings: appearance, timezone, account, export, data notes, danger zone. */
 export function SettingsView({ username }: { username: string }) {
   return (
     <div className="mx-auto max-w-2xl">
@@ -249,6 +351,7 @@ export function SettingsView({ username }: { username: string }) {
         <AppearanceSection />
         <TimezoneSection />
         <AccountSection username={username} />
+        <ExportSection />
         <DataSection />
         <DangerZoneSection />
       </div>

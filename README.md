@@ -93,6 +93,26 @@ The app is stateless: login rate limiting (keyed on Cloudflare's
 `cf-connecting-ip`) and lockout counters live in Postgres, and nothing depends
 on the old VM (no `relay/`, no `keepalive`, no local paths).
 
+## Tests
+
+`npm test` runs the Vitest suite (`src/**/*.test.ts`): the Asia/Kolkata date
+helpers, the quick-capture parser, the day-planning engine, export month
+ranges and the daily quotes. The suite is timezone-independent. GitHub Actions
+(`.github/workflows/ci.yml`) runs typecheck, lint, tests and a build on every
+push.
+
+## Export, install, quotes
+
+- **Export:** Settings → Export downloads a JSON file for one month
+  (`/export?month=YYYY-MM`, Asia/Kolkata) or everything (`/export`). Password
+  hashes, sessions and login attempts are never included.
+- **Install:** `src/app/manifest.ts` plus `public/icons/` make the app
+  installable to a phone's home screen (no offline mode / service worker).
+- **Quotes:** `src/lib/quotes.ts` holds the daily quotes shown on Today. Each
+  entry is either sourced (a named work) or marked `attributed`.
+- **Error / loading / not-found pages:** `error.tsx`, `global-error.tsx`,
+  `not-found.tsx` and `(app)/loading.tsx` under `src/app`.
+
 ## Security model
 
 - **Passwords:** bcrypt, 12 rounds. Never logged, never returned.
