@@ -7,6 +7,7 @@ import {
   ArrowDown,
   CalendarX,
   ChevronsRight,
+  Repeat,
   GripVertical,
   Plus,
 } from "lucide-react";
@@ -32,6 +33,8 @@ export interface PlanListItem {
   priority: string;
   /** Moved on to tomorrow: stays in today's log as a ">" entry. */
   migrated: boolean;
+  /** Generated from a routine: tomorrow gets its own, so it can't be moved. */
+  routine: boolean;
 }
 
 interface PlanListProps {
@@ -240,6 +243,13 @@ export function PlanList({ dayKey, tomorrowKey, initialItems }: PlanListProps) {
               />
             </div>
 
+            {item.routine && (
+              <Repeat
+                className="size-3.5 shrink-0 text-text-secondary"
+                aria-label="Routine"
+              />
+            )}
+
             {mins && (
               <span className="shrink-0 font-mono text-xs tabular-nums text-text-secondary">
                 {mins}
@@ -271,7 +281,7 @@ export function PlanList({ dayKey, tomorrowKey, initialItems }: PlanListProps) {
                   <ArrowDown className="size-3.5" aria-hidden="true" />
                 </Button>
               </Tooltip>
-              {!done && (
+              {!done && !item.routine && (
                 <Tooltip content="Move to tomorrow">
                   <Button
                     variant="ghost"

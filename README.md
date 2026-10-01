@@ -110,6 +110,11 @@ push.
   installable to a phone's home screen (no offline mode / service worker).
 - **Quotes:** `src/lib/quotes.ts` holds the daily quotes shown on Today. Each
   entry is either sourced (a named work) or marked `attributed`.
+- **Routines:** repeating commitments (`/routines`, `src/actions/routines.ts`,
+  pure logic in `src/lib/routines.ts`). Each day Today asks "college day or
+  free day?"; `startDay()` then creates that day's routine tasks with the
+  matching durations. Missed routine tasks from earlier days are marked
+  CANCELLED instead of piling up.
 - **Error / loading / not-found pages:** `error.tsx`, `global-error.tsx`,
   `not-found.tsx` and `(app)/loading.tsx` under `src/app`.
 

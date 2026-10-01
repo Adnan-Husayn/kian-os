@@ -12,7 +12,14 @@ import { PlanList, type PlanListItem } from "@/components/today/PlanList";
 import { InlineCapture } from "@/components/today/InlineCapture";
 import { OverloadNudge } from "@/components/today/OverloadNudge";
 import { FirstDay } from "@/components/today/FirstDay";
+import { DayTypeControl } from "@/components/today/DayTypeControl";
 import { quoteByline, quoteForDay, type Quote } from "@/lib/quotes";
+import {
+  isDayType,
+  routinesForDay,
+  totalMinutes,
+  type DayType,
+} from "@/lib/routines";
 
 export const dynamic = "force-dynamic";
 
@@ -82,8 +89,9 @@ export default async function TodayPage() {
   const tomorrowKey = dayKeyKolkata(addDaysKolkata(todayStart, 1));
 
   // Independent reads run in parallel: each is a round trip to the database.
-  const [plan, upNext] = await Promise.all([
+  const [plan, routines, upNext] = await Promise.all([
     getOrCreateDailyPlan(dayKey),
+    prisma.routine.findMany({ where: { userId: user.id, active: true } }),
     // "UP NEXT": tasks scheduled for today with a start time, not finished.
     prisma.task.findMany({
       where: {
@@ -119,7 +127,22 @@ export default async function TodayPage() {
     estimatedMinutes: pt.task.estimatedMinutes,
     priority: pt.task.priority,
     migrated: pt.migrated,
+    routine: pt.task.routineId !== null,
   }));
+
+  // What each kind of day would put on the plan, for the day-type prompt.
+  const summarize = (type: DayType) => {
+    const occurrences = routinesForDay(routines, type, dayKey);
+    return { count: occurrences.length, minutes: totalMinutes(occurrences) };
+  };
+  const dayTypeControl = (
+    <DayTypeControl
+      dayKey={dayKey}
+      dayType={isDayType(plan.dayType) ? plan.dayType : null}
+      summaries={{ college: summarize("college"), free: summarize("free") }}
+      hasRoutines={routines.length > 0}
+    />
+  );
   // Moved-on (">") entries stay visible but don't count toward the day.
   const activeItems = items.filter((i) => !i.migrated);
 
@@ -138,6 +161,7 @@ export default async function TodayPage() {
       <div className="space-y-6">
         <DailyLogHeader dayNumber={dayNumber} dateLabel={dateLabel} greeting={greeting} />
         <DailyQuote quote={quote} />
+        {dayTypeControl}
         <FirstDay dayKey={dayKey} />
       </div>
     );
@@ -148,6 +172,8 @@ export default async function TodayPage() {
       <DailyLogHeader dayNumber={dayNumber} dateLabel={dateLabel} greeting={greeting} />
 
       <DailyQuote quote={quote} />
+
+      {dayTypeControl}
 
       <FocusCard dayKey={dayKey} initialFocus={plan.mainFocus} />
 

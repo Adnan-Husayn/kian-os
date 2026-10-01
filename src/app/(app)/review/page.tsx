@@ -38,6 +38,8 @@ export default async function ReviewPage() {
     .filter(
       (pt) =>
         !pt.migrated &&
+        // Routine tasks are not carried over: tomorrow gets its own.
+        pt.task.routineId === null &&
         pt.task.status !== "DONE" &&
         pt.task.status !== "CANCELLED",
     )

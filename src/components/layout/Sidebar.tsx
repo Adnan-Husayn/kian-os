@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Sun,
   CalendarCheck,
+  Repeat,
   Inbox,
   ListTodo,
   FolderKanban,
@@ -31,6 +32,7 @@ export interface NavItem {
 export const PRIMARY_NAV: NavItem[] = [
   { href: "/today", label: "Today", icon: Sun },
   { href: "/plan", label: "Plan", icon: CalendarCheck },
+  { href: "/routines", label: "Routines", icon: Repeat },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/tasks", label: "Tasks", icon: ListTodo },
   { href: "/projects", label: "Projects", icon: FolderKanban },

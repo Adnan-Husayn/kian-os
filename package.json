@@ -14,7 +14,8 @@
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "db:migrate": "prisma migrate deploy",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:setup-plan": "tsx prisma/setup-plan.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

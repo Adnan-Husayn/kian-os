@@ -45,6 +45,8 @@ export interface PlanTaskDTO {
     estimatedMinutes: number | null;
     dueDate: Date | null;
     scheduledStartTime: string | null;
+    /** Set when the task was generated from a routine. */
+    routineId: string | null;
   };
 }
 
@@ -55,6 +57,8 @@ export interface DailyPlanDTO {
   intention: string | null;
   energyLevel: string | null;
   notes: string | null;
+  /** "college" | "free" once the day has been started; null before. */
+  dayType: string | null;
   tasks: PlanTaskDTO[];
 }
 
@@ -84,6 +88,7 @@ const planInclude = {
           estimatedMinutes: true,
           dueDate: true,
           scheduledStartTime: true,
+          routineId: true,
         },
       },
     },
@@ -98,6 +103,7 @@ function toPlanDTO(
     intention: string | null;
     energyLevel: string | null;
     notes: string | null;
+    dayType: string | null;
     tasks: Array<{
       id: string;
       taskId: string;
@@ -112,6 +118,7 @@ function toPlanDTO(
         estimatedMinutes: number | null;
         dueDate: Date | null;
         scheduledStartTime: string | null;
+        routineId: string | null;
       };
     }>;
   },
@@ -124,6 +131,7 @@ function toPlanDTO(
     intention: plan.intention,
     energyLevel: plan.energyLevel,
     notes: plan.notes,
+    dayType: plan.dayType,
     tasks: plan.tasks.map((pt) => ({
       id: pt.id,
       taskId: pt.taskId,
@@ -138,6 +146,7 @@ function toPlanDTO(
         estimatedMinutes: pt.task.estimatedMinutes,
         dueDate: pt.task.dueDate,
         scheduledStartTime: pt.task.scheduledStartTime,
+        routineId: pt.task.routineId,
       },
     })),
   };

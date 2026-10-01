@@ -79,6 +79,7 @@ model User {
   journalEntries JournalEntry[]
   dailyPlans     DailyPlan[]
   captures       Capture[]
+  routines       Routine[]
 }
 
 model Session {
@@ -118,11 +119,16 @@ model Task {
   parentTask         Task?        @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
   subtasks           Task[]       @relation("TaskSubtasks")
   completedAt        DateTime?
+  // Set on tasks generated from a routine: one per routine per day.
+  routineId          String?
+  // Deleting a routine keeps its past tasks as history.
+  routine            Routine?     @relation(fields: [routineId], references: [id], onDelete: SetNull)
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
   dailyPlanTasks DailyPlanTask[]
 
+  @@unique([routineId, scheduledDate])
   @@index([userId, status])
   @@index([userId, scheduledDate])
   @@index([userId, dueDate])
@@ -141,10 +147,39 @@ model Project {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  tasks Task[]
-  notes Note[]
+  tasks    Task[]
+  notes    Note[]
+  routines Routine[]
 
   @@index([userId, status])
+}
+
+/// A repeating commitment (DSA practice, gym, ...). Each day the user says
+/// whether it is a college day or a free day, and the routine becomes a task
+/// on that day's plan with the matching duration.
+model Routine {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  /// Minutes on a college day; null = skip on college days.
+  minutesCollege Int?
+  /// Minutes on a free day; null = skip on free days.
+  minutesFree    Int?
+  /// Optional fixed start time, "HH:mm" (e.g. gym at 20:00).
+  startTime      String?
+  /// ISO weekdays it applies on (1 = Monday ... 7 = Sunday); empty = every day.
+  weekdays       Int[]    @default([])
+  active         Boolean  @default(true)
+  position       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tasks Task[]
+
+  @@index([userId, active])
 }
 
 model Idea {
@@ -209,6 +244,8 @@ model DailyPlan {
   intention   String?
   energyLevel String?
   notes       String?
+  /// "college" | "free": chosen each day, decides routine durations.
+  dayType     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
